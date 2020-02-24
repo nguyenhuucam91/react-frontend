@@ -5,3 +5,14 @@ html, body, #root {
 body {
   margin: 0;
 }
+
+.main-content {
+  background-color: #fff;
+  padding: 24px;
+  margin: 0;
+  min-height: 280px;
+}
+
+h2.title-heading {
+  margin: 0.5em 0;
+}

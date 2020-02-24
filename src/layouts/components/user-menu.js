@@ -4,7 +4,7 @@ import { Menu } from "antd"
 import { useAuth } from "@/context/AuthContext"
 import { LOCAL_STORAGE_AUTH_PREFIX, AUTH_TOKEN_KEY } from '@/utils/request'
 import { router } from 'umi'
-import { LOGIN_ROUTE } from '@/constants/routes'
+import { routes } from '@/constants/routes'
 
 
 const UserMenu = () => {
@@ -13,7 +13,7 @@ const UserMenu = () => {
 
   const logout = () => {
     localStorage.removeItem(LOCAL_STORAGE_AUTH_PREFIX + AUTH_TOKEN_KEY)
-    router.push(LOGIN_ROUTE)
+    router.push(routes.api.paths.authenticate.login)
   }
 
   return (

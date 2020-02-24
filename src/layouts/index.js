@@ -1,78 +1,35 @@
 import React from 'react'
-import { LOGIN_ROUTE } from '@/constants/routes'
-import { Layout, Menu, Icon, Breadcrumb, Tabs } from 'antd'
+import { routes } from '@/constants/routes'
+import { Layout } from 'antd'
 import { AuthContextProvider } from '@/context/AuthContext'
 import UserMenu from './components/user-menu'
+import Sidebar from './components/sidebar-menu'
+import { buildRelativeUrl } from '@/utils/url'
 
 const { Header, Content, Footer, Sider } = Layout
-const { SubMenu } = Menu
-const { TabPane } = Tabs
-
 
 function BasicLayout(props) {
-  if (props.location.pathname === LOGIN_ROUTE) {
+  if (props.location.pathname === buildRelativeUrl(routes.api.paths.authenticate.login)) {
     return <>{props.children}</>
   }
 
   return (
     <Layout style={{ minHeight: '100vh' }}>
-      <AuthContextProvider>
+        <AuthContextProvider>
         {/* End user */}
         <Sider collapsible collapsed={false} onCollapse={null}>
           <div className="logo" />
-          <Menu theme="dark" defaultSelectedKeys={['1']} mode="inline">
-            <Menu.Item key="1">
-              <Icon type="pie-chart" />
-              <span>Option 1</span>
-            </Menu.Item>
-            <Menu.Item key="2">
-              <Icon type="desktop" />
-              <span>Option 2</span>
-            </Menu.Item>
-            <SubMenu
-              key="sub1"
-              title={
-                <span>
-                  <Icon type="user" />
-                  <span>User</span>
-                </span>
-              }
-            >
-              <Menu.Item key="3">Tom</Menu.Item>
-              <Menu.Item key="4">Bill</Menu.Item>
-              <Menu.Item key="5">Alex</Menu.Item>
-            </SubMenu>
-            <SubMenu
-              key="sub2"
-              title={
-                <span>
-                  <Icon type="team" />
-                  <span>Team</span>
-                </span>
-              }
-            >
-              <Menu.Item key="6">Team 1</Menu.Item>
-              <Menu.Item key="8">Team 2</Menu.Item>
-            </SubMenu>
-            <Menu.Item key="9">
-              <Icon type="file" />
-              <span>File</span>
-            </Menu.Item>
-          </Menu>
+          {/* Sidebar */}
+          <Sidebar />
         </Sider>
         <Layout>
           <Header style={{ background: '#fff', padding: 0 }} >
             <UserMenu></UserMenu>
           </Header>
           <Content style={{ margin: '0 16px' }}>
-            <Breadcrumb style={{ margin: '16px 0' }}>
-              <Breadcrumb.Item>User</Breadcrumb.Item>
-              <Breadcrumb.Item>Bill</Breadcrumb.Item>
-            </Breadcrumb>
-            <div style={{ padding: 24, background: '#fff', minHeight: 360 }}>
-              {props.children}
-            </div>
+            {props.children}
           </Content>
+
           <Footer style={{ textAlign: 'center' }}>Ant Design ©2018 Created by Ant UED</Footer>
         </Layout>
       </AuthContextProvider>

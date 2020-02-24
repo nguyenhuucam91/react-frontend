@@ -1,6 +1,10 @@
 import axios from 'axios'
 import createAuthRefreshInterceptor from 'axios-auth-refresh'
-import { REFRESH_ROUTE } from '@/constants/routes'
+import { routes } from '@/constants/routes'
+import { router } from 'umi'
+import UnauthenticatedException from '@/errors/UnauthenticatedException'
+import { buildApiUrl, buildRelativeUrl } from './url'
+import ApiCallException from '@/errors/ApiCallException'
 
 export const LOCAL_STORAGE_AUTH_PREFIX = '__react-frontend__'
 export const AUTH_TOKEN_KEY = 'auth-token'
@@ -12,33 +16,57 @@ const BACKEND_API_URL = "http://react-backend.test/api"
  * @param {*} data
  * @param {*} additionalHeaders
  */
-const makePrivateRequest = async (url, data = {}, method, options) => {
-  const accessToken = localStorage.getItem(LOCAL_STORAGE_AUTH_PREFIX + AUTH_TOKEN_KEY);
+const makePrivateRequest = async (url, method, additionalOptions = {}) => {
+  const { params, data, headers, ...rest } = additionalOptions
 
-  const refreshAuthLogic = async failedRequest => {
-    const res = await axios.post(BACKEND_API_URL + REFRESH_ROUTE, {}, {
+  try {
+    const accessToken = localStorage.getItem(LOCAL_STORAGE_AUTH_PREFIX + AUTH_TOKEN_KEY)
+    if (!accessToken) {
+      throw new UnauthenticatedException("Access token not found");
+    }
+
+    const refreshAuthLogic = async failedRequest => {
+      const res = await axios.post('/', {}, {
+        baseURL: buildApiUrl(),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`
+        }
+      });
+      console.log(res);
+      localStorage.setItem(LOCAL_STORAGE_AUTH_PREFIX + AUTH_TOKEN_KEY, res.data.access_token)
+      failedRequest.response.config.headers['Authorization'] = 'Bearer ' + res.data.access_token
+      return Promise.resolve()
+    }
+
+    createAuthRefreshInterceptor(axios, refreshAuthLogic)
+
+    const axiosInstance = axios({
+      url: buildApiUrl(url),
+      params,
+      method,
+      data,
+      baseURL: BACKEND_API_URL,
       headers: {
-        'Authorization': `Bearer ${accessToken}`
-      }
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+        ...headers
+      },
+      ...rest
+    }).catch(error => {
+      throw new UnauthenticatedException(error)
     })
-    localStorage.setItem(LOCAL_STORAGE_AUTH_PREFIX + AUTH_TOKEN_KEY, res.data.access_token)
-    failedRequest.response.config.headers['Authorization'] = 'Bearer ' + res.data.access_token
-    return Promise.resolve()
+
+    return axiosInstance;
+
+  } catch (e) {
+    if (e.name === "UnauthenticatedException") {
+      console.error(e);
+      router.push(buildRelativeUrl(routes.api.paths.authenticate.login));
+    }
   }
-
-  createAuthRefreshInterceptor(axios, refreshAuthLogic)
-
-  return axios({
-    url: BACKEND_API_URL + url,
-    method,
-    data,
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${accessToken}`,
-      ...options
-    },
-  })
 }
 
 /**
@@ -47,21 +75,32 @@ const makePrivateRequest = async (url, data = {}, method, options) => {
  * @param {*} data
  * @param {*} additionalHeaders
  */
-const makePublicRequest = async (url, data = {}, method, options) => {
+const makePublicRequest = async (url, method, additionalOptions = {}) => {
 
-  const publicUrl = BACKEND_API_URL + url
-
-  const axiosRequest = axios({
-    url: publicUrl,
-    method,
-    data,
-    headers: {
-      'Accept': 'application/json',
-      'Content-Type': 'application/json',
-      ...options
-    },
-  })
-  return axiosRequest
+  const { params, data, headers, ...rest } = additionalOptions
+  try {
+    const axiosInstance = await axios({
+        url: buildApiUrl(url),
+        method,
+        data,
+        params,
+        baseURL: BACKEND_API_URL,
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          ...headers
+        },
+        ...rest
+      }).catch(error => {
+        throw new ApiCallException(error)
+      });
+      return axiosInstance;
+  } catch (e) {
+    if (e.name === "ApiCallException") {
+      console.error("Api call failed", e.message);
+      return false;
+    }
+  }
 }
 
-export {makePrivateRequest, makePublicRequest}
+export { makePrivateRequest, makePublicRequest }

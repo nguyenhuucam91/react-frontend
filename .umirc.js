@@ -15,6 +15,10 @@ export default {
           component: './dashboard/index',
         },
         {
+          path: '/categories',
+          component: './category/index',
+        },
+        {
           path: '/',
           component: '../pages/index',
         },

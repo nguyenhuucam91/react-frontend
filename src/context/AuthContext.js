@@ -6,7 +6,6 @@ const AuthenticatedUser = React.createContext(null)
 
 const AuthContextProvider = (props) => {
 
-
   const { data } = useAsync(() => authService.user(), [])
 
   return (
